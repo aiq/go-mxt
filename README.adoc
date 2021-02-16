@@ -1,0 +1,8 @@
+= go-mxt
+
+Go package to work with the mxt file format.
+
+== Links
+
+* API Documentation https://godoc.org/github.com/aiq/go-mxt
+* Specification https://mxt.aiq.dk/
