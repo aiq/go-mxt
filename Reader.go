@@ -46,7 +46,13 @@ func readString(r *bufio.Reader, delim []byte) (string, error) {
 		if bytes.Equal(buf, delimTail) {
 			search = false
 			_, err = r.Read(buf)
-			builder.Write(buf)
+			if err != nil {
+				return builder.String(), err
+			}
+			_, err = builder.Write(buf)
+			if err != nil {
+				return builder.String(), err
+			}
 		}
 	}
 	return builder.String(), nil
@@ -115,7 +121,7 @@ func (my *Reader) readHeader() (Header, error) {
 func (my *Reader) readContent() (string, error) {
 	delim := "//"
 	if my.expPatt != "" {
-		delim = "//-" + my.expPatt + "-"
+		delim = "//" + my.expPatt
 	}
 
 	cnt, err := readString(my.Reader, []byte(delim))
