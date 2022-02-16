@@ -51,7 +51,7 @@ func (my *Writer) detectPattern(content string) string {
 	patt := []rune(my.Salt)
 	for {
 		pattStr := string(patt)
-		if !strings.Contains(content, "\n//-"+string(pattStr)+"-") {
+		if !strings.Contains(content, "\n//"+string(pattStr)) {
 			return pattStr
 		}
 		patt = append(patt, my.Alphabet[rand.Intn(len(my.Alphabet))])
@@ -121,7 +121,7 @@ func (my *Writer) writeHeader(h Header, nextPatt string) (n int, err error) {
 
 	marker := "// "
 	if len(my.prevPatt) > 0 {
-		marker = "//-" + my.prevPatt + "- "
+		marker = "//" + my.prevPatt
 	}
 	tmp, err = my.writer.WriteString(marker)
 	n += tmp
@@ -166,6 +166,9 @@ func (my *Writer) WriteChunk(c Chunk) (n int, err error) {
 		return n, err
 	}
 	tmp, err = my.writer.WriteString(c.Content)
+	if err != nil {
+		return n, err
+	}
 	n += tmp
 
 	err = my.writer.Flush()
