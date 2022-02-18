@@ -118,6 +118,13 @@ func (my *Reader) readHeader() (Header, error) {
 	return header, nil
 }
 
+func trimLastNewLineSuffix(str string) string {
+	if strings.HasSuffix(str, "\r\n") {
+		return strings.TrimSuffix(str, "\r\n")
+	}
+	return strings.TrimSuffix(str, "\n")
+}
+
 func (my *Reader) readContent() (string, error) {
 	delim := "//"
 	if my.expPatt != "" {
@@ -128,7 +135,7 @@ func (my *Reader) readContent() (string, error) {
 	if err != nil && err != io.EOF {
 		return "", err
 	}
-	return strings.TrimSuffix(strings.TrimSuffix(cnt, delim), "\n"), nil
+	return trimLastNewLineSuffix(strings.TrimSuffix(cnt, delim)), nil
 }
 
 // ReadChunk reads one Chunk from r.
