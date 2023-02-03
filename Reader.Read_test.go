@@ -1,7 +1,6 @@
 package mxt
 
 import (
-	"io"
 	"strings"
 	"testing"
 )
@@ -84,7 +83,7 @@ int main(void) {
 
 	tt := &TestToken{res, err, t}
 	tt.expectLen(5)
-	tt.expectErr(io.EOF)
+	tt.expectErr(nil)
 
 	tt.expectContent("user.json", `{
    "user": "alucard",

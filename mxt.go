@@ -11,8 +11,16 @@ type Header struct {
 	Comment string
 }
 
+func (h Header) IsEmpty() bool {
+	return h.Name == "" && h.Comment == ""
+}
+
 // A Chunk represents a mxt chunk.
 type Chunk struct {
 	Header
 	Content string
+}
+
+func (c Chunk) IsEmpty() bool {
+	return c.Header.IsEmpty() && c.Comment == ""
 }

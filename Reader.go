@@ -152,23 +152,60 @@ func (my *Reader) ReadChunk() (ch Chunk, err error) {
 
 //************************************************************************ Read
 
-// Read creates a Reader and reads all chunks from r and stores them in the map.
+// ReadChunks creates a Reader and reads all chunks from r and stores them in
+// the map.
 // The name will be used as key, the content will be stored as value.
 // Possible comments in the mxt will be ignored.
 //
 // A successful call returns err == nil, not err == io.EOF.
-// Because Read is defined to read until EOF, it does not treat end of file as
-// an error to be reported.
-func Read(r io.Reader) (map[string]string, error) {
-	res := make(map[string]string)
+// Because ReadChunks is defined to read until EOF, it does not treat end of
+// file as an error to be reported.
+func ReadChunks(r io.Reader) ([]Chunk, error) {
+	res := []Chunk{}
 	var err error
 
 	my := NewReader(r)
 	for err == nil {
-		var chunk Chunk
-		chunk, err = my.ReadChunk()
+		var c Chunk
+		c, err = my.ReadChunk()
 		if err == nil || err != io.EOF {
-			res[chunk.Header.Name] = chunk.Content
+			res = append(res, c)
+		}
+	}
+
+	if err == io.EOF {
+		err = nil
+	}
+	return res, err
+}
+
+// ReadStringChunks
+func ReadStringChunks(str string) ([]Chunk, error) {
+	return ReadChunks(strings.NewReader(str))
+}
+
+// ReadFileChunks reads the mxt file behind path with Read.
+func ReadFileChunks(path string) ([]Chunk, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	return ReadChunks(file)
+}
+
+// Read creates a Reader and reads all with ReadChunks and stores them in the
+// map.
+// The name will be used as key, the content will be stored as value.
+// Possible comments in the mxt will be ignored.
+func Read(r io.Reader) (map[string]string, error) {
+	res := make(map[string]string)
+
+	chunks, err := ReadChunks(r)
+	if err == nil {
+		for _, c := range chunks {
+			res[c.Header.Name] = c.Content
 		}
 	}
 
