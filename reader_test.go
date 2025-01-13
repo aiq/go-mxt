@@ -3,9 +3,11 @@ package mxt
 import (
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestReadExample(t *testing.T) {
+func TestReadString(t *testing.T) {
 	cases := []struct {
 		inp string
 		exp Chunks
@@ -100,6 +102,24 @@ int main(void) {
 				},
 			},
 		},
+		{
+			inp: `// base64 -->
+hQEMA8p144+Gi+YpAQf/VeFG9Zb+8w9aldWll8n2g3jqpE613LKg2XAJgwXQmSQL
+R4O+TlQakJ+//5vM4IxxubPgYCyt6cyL7qM3oJIuk7vsqMbl5t7c/dOfXjj7goIC
+// last -->
+tsal`,
+			exp: Chunks{
+				{
+					Name: "base64",
+					Content: `hQEMA8p144+Gi+YpAQf/VeFG9Zb+8w9aldWll8n2g3jqpE613LKg2XAJgwXQmSQL
+R4O+TlQakJ+//5vM4IxxubPgYCyt6cyL7qM3oJIuk7vsqMbl5t7c/dOfXjj7goIC`,
+				},
+				{
+					Name:    "last",
+					Content: "tsal",
+				},
+			},
+		},
 	}
 
 	for i, c := range cases {
@@ -114,14 +134,12 @@ int main(void) {
 		}
 
 		for ci, cv := range chunks {
-			expName := c.exp[ci].Name
-			if expName != cv.Name {
-				t.Errorf("%v - @%v - unexpected name: %q != %q", i, ci, expName, cv.Name)
+			if diff := cmp.Diff(c.exp[ci].Name, cv.Name); diff != "" {
+				t.Errorf("%v - @%v - %v", i, ci, diff)
 				break
 			}
-			expContent := c.exp[ci].Content
-			if expContent != cv.Content {
-				t.Errorf("%v - @%v - unexpected content: %q != %q", i, ci, expContent, cv.Content)
+			if diff := cmp.Diff(c.exp[ci].Content, cv.Content); diff != "" {
+				t.Errorf("%v - @%v - %v", i, ci, diff)
 				break
 			}
 		}

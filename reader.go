@@ -27,8 +27,9 @@ func NewReader(r io.Reader) *Reader {
 
 //***************************************************************** Reader.func
 
-func readString(r *bufio.Reader, delim []byte) (string, error) {
+func readString(r *bufio.Reader, delim []byte, isContent bool) (string, error) {
 	delimByte := delim[0]
+	delimByteStr := string([]byte{delimByte})
 	delimTail := delim[1:]
 	var builder strings.Builder
 	search := true
@@ -37,6 +38,12 @@ func readString(r *bufio.Reader, delim []byte) (string, error) {
 		builder.WriteString(tmpStr)
 		if err != nil {
 			return builder.String(), err
+		}
+
+		if isContent &&
+			builder.Len() != 1 &&
+			!strings.HasSuffix(tmpStr, "\n"+delimByteStr) {
+			continue
 		}
 
 		buf, err := r.Peek(len(delimTail))
@@ -85,7 +92,7 @@ func parseComment(rawComment string) string {
 
 func (r *Reader) readHeader() (Header, error) {
 	header := Header{"", ""}
-	str, err := readString(r.Reader, []byte("-->"))
+	str, err := readString(r.Reader, []byte("-->"), false)
 	if err != nil {
 		return header, err
 	}
@@ -131,7 +138,7 @@ func (r *Reader) readContent() (string, error) {
 		delim = delim + r.expPatt
 	}
 
-	cnt, err := readString(r.Reader, []byte(delim))
+	cnt, err := readString(r.Reader, []byte(delim), true)
 	if err != nil && err != io.EOF {
 		return "", err
 	}
