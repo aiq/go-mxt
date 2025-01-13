@@ -2,6 +2,7 @@ package mxt
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"math/rand"
@@ -160,7 +161,7 @@ func (my *Writer) writeHeader(h Header, nextPatt string) (n int, err error) {
 // Each Chunk will be written to the underlying io.Writer.
 func (my *Writer) WriteChunk(c Chunk) (n int, err error) {
 	tmp := 0
-	tmp, err = my.writeHeader(c.Header, my.detectPattern(c.Content))
+	tmp, err = my.writeHeader(c.Header(), my.detectPattern(c.Content))
 	n += tmp
 	if err != nil {
 		return n, err
@@ -179,22 +180,20 @@ func (my *Writer) WriteChunk(c Chunk) (n int, err error) {
 // Write writes a Chunk without comment.
 func (my *Writer) Write(name string, content string) (int, error) {
 	return my.WriteChunk(Chunk{
-		Header: Header{
-			Name: name,
-		},
+		Name:    name,
 		Content: content,
 	})
 }
 
 //*********************************************************************** Write
 
-// Write writes all map entries to w.
+// Write writes all chunks to w.
 // The key will be used as name, the value will be stored as content in the mxt.
-func Write(m map[string]string, w io.Writer) (n int, err error) {
+func Write(w io.Writer, cs Chunks) (n int, err error) {
 	writer := NewWriter(w)
 	tmp := 0
-	for name, content := range m {
-		tmp, err = writer.Write(name, content)
+	for _, c := range cs {
+		tmp, err = writer.WriteChunk(c)
 		n += tmp
 		if err != nil {
 			return n, err
@@ -203,13 +202,20 @@ func Write(m map[string]string, w io.Writer) (n int, err error) {
 	return n, nil
 }
 
-// WriteFile writes all map entries to the file behind path.
-func WriteFile(m map[string]string, path string) (n int, err error) {
+// WriteString writes a string with Write.
+func WriteString(cs Chunks) (string, error) {
+	var b bytes.Buffer
+	_, err := Write(&b, cs)
+	return b.String(), err
+}
+
+// WriteFile writes all chunks to the file behind path.
+func WriteFile(cs Chunks, path string) (n int, err error) {
 	file, err := os.Create(path)
 	if err != nil {
 		return
 	}
 	defer file.Close()
 
-	return Write(m, file)
+	return Write(file, cs)
 }

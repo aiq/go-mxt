@@ -83,9 +83,9 @@ func parseComment(rawComment string) string {
 	return strings.TrimSpace(builder.String())
 }
 
-func (my *Reader) readHeader() (Header, error) {
+func (r *Reader) readHeader() (Header, error) {
 	header := Header{"", ""}
-	str, err := readString(my.Reader, []byte("-->"))
+	str, err := readString(r.Reader, []byte("-->"))
 	if err != nil {
 		return header, err
 	}
@@ -109,11 +109,11 @@ func (my *Reader) readHeader() (Header, error) {
 	}
 	header.Comment = parseComment(str[nameEnd:commentEnd])
 
-	my.expPatt, err = my.ReadString('\n')
+	r.expPatt, err = r.ReadString('\n')
 	if err != nil && err != io.EOF {
 		return header, err
 	}
-	my.expPatt = strings.TrimSpace(my.expPatt)
+	r.expPatt = strings.TrimSpace(r.expPatt)
 
 	return header, nil
 }
@@ -125,13 +125,13 @@ func trimLastNewLineSuffix(str string) string {
 	return strings.TrimSuffix(str, "\n")
 }
 
-func (my *Reader) readContent() (string, error) {
+func (r *Reader) readContent() (string, error) {
 	delim := "//"
-	if my.expPatt != "" {
-		delim = "//" + my.expPatt
+	if r.expPatt != "" {
+		delim = delim + r.expPatt
 	}
 
-	cnt, err := readString(my.Reader, []byte(delim))
+	cnt, err := readString(r.Reader, []byte(delim))
 	if err != nil && err != io.EOF {
 		return "", err
 	}
@@ -140,28 +140,30 @@ func (my *Reader) readContent() (string, error) {
 
 // ReadChunk reads one Chunk from r.
 // If there is no data left to be read, ReadChunk returns a empty Chunk, io.EOF.
-func (my *Reader) ReadChunk() (ch Chunk, err error) {
+func (r *Reader) ReadChunk() (c Chunk, err error) {
 
-	ch.Header, err = my.readHeader()
+	header, err := r.readHeader()
+	c.Name = header.Name
+	c.Comment = header.Comment
 	if err == nil {
-		ch.Content, err = my.readContent()
+		c.Content, err = r.readContent()
 	}
 
-	return ch, err
+	return c, err
 }
 
 //************************************************************************ Read
 
-// ReadChunks creates a Reader and reads all chunks from r and stores them in
+// Read creates a Reader and reads all chunks from r and stores them in
 // the map.
 // The name will be used as key, the content will be stored as value.
 // Possible comments in the mxt will be ignored.
 //
 // A successful call returns err == nil, not err == io.EOF.
-// Because ReadChunks is defined to read until EOF, it does not treat end of
+// Because Read is defined to read until EOF, it does not treat end of
 // file as an error to be reported.
-func ReadChunks(r io.Reader) ([]Chunk, error) {
-	res := []Chunk{}
+func Read(r io.Reader) (Chunks, error) {
+	var res Chunks
 	var err error
 
 	my := NewReader(r)
@@ -179,46 +181,13 @@ func ReadChunks(r io.Reader) ([]Chunk, error) {
 	return res, err
 }
 
-// ReadStringChunks
-func ReadStringChunks(str string) ([]Chunk, error) {
-	return ReadChunks(strings.NewReader(str))
-}
-
-// ReadFileChunks reads the mxt file behind path with Read.
-func ReadFileChunks(path string) ([]Chunk, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	return ReadChunks(file)
-}
-
-// Read creates a Reader and reads all with ReadChunks and stores them in the
-// map.
-// The name will be used as key, the content will be stored as value.
-// Possible comments in the mxt will be ignored.
-func Read(r io.Reader) (map[string]string, error) {
-	res := make(map[string]string)
-
-	chunks, err := ReadChunks(r)
-	if err == nil {
-		for _, c := range chunks {
-			res[c.Header.Name] = c.Content
-		}
-	}
-
-	return res, err
-}
-
 // ReadString reads str with Read.
-func ReadString(str string) (map[string]string, error) {
+func ReadString(str string) (Chunks, error) {
 	return Read(strings.NewReader(str))
 }
 
 // ReadFile reads the mxt file behind path with Read.
-func ReadFile(path string) (map[string]string, error) {
+func ReadFile(path string) (Chunks, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err

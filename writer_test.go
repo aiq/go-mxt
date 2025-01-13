@@ -47,7 +47,7 @@ with backslash at the begin`,
 		var b strings.Builder
 		w := NewWriter(&b)
 
-		_, err := w.WriteChunk(Chunk{Header{test.name, test.comment}, test.content})
+		_, err := w.WriteChunk(Chunk{test.name, test.comment, test.content})
 
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
