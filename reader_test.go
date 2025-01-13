@@ -5,36 +5,6 @@ import (
 	"testing"
 )
 
-type testToken struct {
-	res Chunks
-	err error
-	*testing.T
-}
-
-func (tt *testToken) expectErr(err error) {
-	if tt.err != err {
-		tt.Errorf("invalid error: %v != %v", tt.err, err)
-	}
-}
-
-func (tt *testToken) expectLen(n int) {
-	if len(tt.res) != n {
-		tt.Errorf("invalid map lengt: %q != %q", len(tt.res), n)
-	}
-}
-
-func (tt *testToken) expectContent(name string, content string) {
-	c, found := tt.res.Get(name)
-	if !found {
-		tt.Errorf("no entry for: %q", name)
-	}
-	if c.Content != content {
-		tt.Errorf("invalid content: \n%s\n%s", c.Content, content)
-	}
-}
-
-//******************************************************************************
-
 func TestReadExample(t *testing.T) {
 	cases := []struct {
 		inp string
